@@ -1,6 +1,6 @@
 // src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
-import { getProfile, getSocialProfiles, updatePreferences, addSocialProfile, analyzeAllProfiles, addSkills } from '../services/api';
+import { getProfile, getSocialProfiles, updatePreferences, addSocialProfile, analyzeAllProfiles } from '../services/api';
 
 export default function Profile() {
   // User profile state
@@ -346,6 +346,22 @@ export default function Profile() {
                 {addingProfile ? 'Adding...' : 'Add Profile'}
               </button>
             </form>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-indigo-700 mb-4">Technical Skills and Analysis Scores</h2>
+          {profile?.analysisScores ? (
+            <ul className="space-y-2">
+              {Object.entries(profile.analysisScores).map(([category, score]) => (
+                <li key={category} className="flex justify-between">
+                  <span className="font-medium capitalize">{category.replace('_', ' ')}</span>
+                  <span className="text-gray-700">{score}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600">No analysis scores available. Please analyze your profiles.</p>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
