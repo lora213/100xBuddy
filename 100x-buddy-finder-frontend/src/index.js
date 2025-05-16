@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import reportWebVitals from '/Users/varun/Downloads/100xBuddy/100x-buddy-finder-frontend/src/reportWebVitals.js';
+import reportWebVitals from 'frontend/src/reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
