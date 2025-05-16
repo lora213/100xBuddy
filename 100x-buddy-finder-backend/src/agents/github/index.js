@@ -169,7 +169,7 @@ class GitHubAgent {
   async analyzeWithGroqDirect(githubData) {
     try {
       const prompt = `
-        Perform an in-depth analysis of this GitHub profile for a 100x Engineers course participant:
+        Perform an in-depth analysis of this GitHub profile for a participant:
         ${JSON.stringify(githubData, null, 2)}
         
         Evaluate thoroughly:

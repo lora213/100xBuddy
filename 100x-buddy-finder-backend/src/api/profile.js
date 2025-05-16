@@ -539,6 +539,89 @@ router.delete('/social-profile/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Get user skills
+router.get('/skills', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Fetch user's skills
+    const { data, error } = await req.supabase
+      .from('skills')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error("Get skills error:", error);
+      throw error;
+    }
+    
+    res.json({
+      skills: data || []
+    });
+  } catch (error) {
+    console.error('Get skills error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// A unified endpoint for updating the complete profile
+router.put('/', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { 
+      full_name,
+      learning_style, 
+      collaboration_preference, 
+      career_goals, 
+      mentorship_type 
+    } = req.body;
+    
+    // Basic validation
+    if (!full_name) {
+      return res.status(400).json({ error: 'Full name is required' });
+    }
+    
+    // Update user record
+    const updateData = {
+      full_name,
+      updated_at: new Date()
+    };
+    
+    // Add optional fields if provided
+    if (learning_style) updateData.learning_style = learning_style;
+    if (collaboration_preference) updateData.collaboration_preference = 
+      typeof collaboration_preference === 'string' ? 
+        parseInt(collaboration_preference) : collaboration_preference;
+    if (career_goals) updateData.career_goals = career_goals;
+    if (mentorship_type) updateData.mentorship_type = mentorship_type;
+    
+    // Update the user record
+    const { data, error } = await req.supabaseAdmin
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select();
+    
+    if (error) {
+      console.error("Update profile error:", error);
+      throw error;
+    }
+    
+    // Generate personal scores from the updated preferences
+    if (learning_style || collaboration_preference || mentorship_type) {
+      await generatePersonalScores(userId, updateData, req.supabaseAdmin);
+    }
+    
+    res.json({
+      message: 'Profile updated successfully',
+      user: data[0]
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/test', (req, res) => {
     console.log("Test route hit!");
     res.json({ message: 'Test route working' });

@@ -1,6 +1,8 @@
 // src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
-import { getProfile, getSocialProfiles, updatePreferences, addSocialProfile, analyzeAllProfiles } from '../services/api';
+import { getProfile, getSocialProfiles, updatePreferences, addSocialProfile, analyzeAllProfiles, analyzeGithub, analyzeLinkedin, deleteSocialProfile } from '../services/api';
+import ProfileSummary from '../components/ProfileSummary';
+import api from '../services/api';
 
 export default function Profile() {
   // User profile state
@@ -24,42 +26,72 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [addingProfile, setAddingProfile] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [deletingProfile, setDeletingProfile] = useState(false);
+
+  // State to track if profiles have been analyzed
+  const [hasAnalyzedProfiles, setHasAnalyzedProfiles] = useState(false);
   
-  // Load user data on component mount
   useEffect(() => {
-  async function loadProfileData() {
-  try {
-    setLoading(true);
-    console.log("Fetching profile data...");
-    
-    // Get user profile
-    const profileRes = await getProfile();
-    console.log("Profile response:", profileRes.data);
-    
-    const userData = profileRes.data.user || {};
-    setProfile(userData);
-    
-    // Set form values (with fallbacks for missing data)
-    setFullName(userData.full_name || '');
-    setLearningStyle(userData.learning_style || '');
-    setCollaborationPreference(userData.collaboration_preference?.toString() || '');
-    setCareerGoals(Array.isArray(userData.career_goals) ? userData.career_goals : []);
-    setMentorshipType(userData.mentorship_type || '');
-    
-    // Get social profiles (ensure we're using the right property name)
-    const socialProfiles = profileRes.data.socialProfiles || [];
-    setSocialProfiles(socialProfiles);
-    
-  } catch (err) {
-    console.error('Profile loading error:', err);
-    setError('Failed to load profile: ' + (err.response?.data?.error || err.message));
-  } finally {
-    setLoading(false);
-  }
-  }
+    async function loadProfileData() {
+      try {
+        setLoading(true);
+        console.log("Fetching profile data...");
+        
+        // Get user profile
+        const profileRes = await getProfile();
+        console.log("Profile response:", profileRes.data);
+        
+        const userData = profileRes.data.user || {};
+        setProfile(userData);
+        
+        // Set form values (with fallbacks for missing data)
+        setFullName(userData.full_name || '');
+        setLearningStyle(userData.learning_style || '');
+        setCollaborationPreference(userData.collaboration_preference?.toString() || '');
+        setCareerGoals(Array.isArray(userData.career_goals) ? userData.career_goals : []);
+        setMentorshipType(userData.mentorship_type || '');
+        
+        // Get social profiles
+        const socialProfiles = profileRes.data.socialProfiles || [];
+        setSocialProfiles(socialProfiles);
+
+        // Check if profiles have been analyzed
+        if (socialProfiles.some(profile => profile.last_analyzed)) {
+          setHasAnalyzedProfiles(true);
+        }
+  
+        // Check and display analysis scores if they exist
+        if (userData.analysisScores) {
+          console.log("Analysis scores found:", userData.analysisScores);
+          setHasAnalyzedProfiles(true);
+        }
+        
+        // Try to fetch analysis scores separately
+        try {
+          const analysisRes = await api.get('/analysis/scores');
+          if (analysisRes.data && analysisRes.data.scores) {
+            console.log("Fetched analysis scores:", analysisRes.data.scores);
+            setProfile(prevProfile => ({
+              ...prevProfile,
+              analysisScores: analysisRes.data.scores
+            }));
+          }
+        } catch (scoresErr) {
+          // Don't set main error for this - it's okay if scores aren't available yet
+          console.log('No analysis scores available yet or error fetching scores:', scoresErr);
+        }
+        
+      } catch (err) {
+        console.error('Profile loading error:', err);
+        setError('Failed to load profile: ' + (err.response?.data?.error || err.message));
+      } finally {
+        setLoading(false);
+      }
+    }
     
     loadProfileData();
   }, []);
+ 
   
   // Update user preferences
   const handleUpdateProfile = async (e) => {
@@ -127,6 +159,33 @@ export default function Profile() {
     }
   };  
 
+  // Delete social profile
+  const handleDeleteProfile = async (profileId) => {
+    if (!window.confirm('Are you sure you want to delete this profile?')) {
+      return;
+    }
+    
+    try {
+      setDeletingProfile(true);
+      setError('');
+      
+      // Call the delete endpoint
+      await deleteSocialProfile(profileId);
+      
+      // Remove from local state
+      setSocialProfiles(prevProfiles => 
+        prevProfiles.filter(profile => profile.id !== profileId)
+      );
+      
+      alert('Profile deleted successfully');
+    } catch (err) {
+      console.error('Delete profile error:', err);
+      setError('Failed to delete profile: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDeletingProfile(false);
+    }
+  };
+
   const handleAnalyzeProfiles = async () => {
     if (socialProfiles.length === 0) {
       setError('No social profiles to analyze');
@@ -134,27 +193,83 @@ export default function Profile() {
     }
     
     try {
-      setAnalyzing(true);  // Show loading state
-      setError('');        // Clear any previous errors
+      setAnalyzing(true);
+      setError('');
       
-      // Call the analyze-all endpoint
+      // Check if rubric scores are already present
+      const profileRes = await getProfile();
+      const userData = profileRes.data.user;
+
+      if (userData.analysisScores) {
+        setProfile(userData); // Display existing scores
+        alert('Rubric scores already exist and have been displayed.');
+        setHasAnalyzedProfiles(true);
+        return;
+      }
+
+      // Call the analyze-all endpoint if no scores exist
       await analyzeAllProfiles();
-      
+
       // Refresh the social profiles to show "Analyzed" status
       const socialRes = await getSocialProfiles();
       setSocialProfiles(socialRes.data.social_profiles || []);
-      
-      // Notify the user
+
+      // Fetch updated rubric scores
+      const updatedProfileRes = await getProfile();
+      setProfile(updatedProfileRes.data.user);
+
+      // Set flag that profiles have been analyzed
+      setHasAnalyzedProfiles(true);
+
       alert('Profiles analyzed successfully!');
     } catch (error) {
       console.error('Analysis error:', error);
       setError(error.response?.data?.error || 'Failed to analyze profiles');
     } finally {
-      setAnalyzing(false);  // Clear loading state
+      setAnalyzing(false);
     }
   };
 
-  
+  // Updated handleReAnalyzeProfile to fetch and display updated rubric scores after re-analysis.
+  const handleReAnalyzeProfile = async (profile) => {
+    try {
+      setAnalyzing(true);
+      setError('');
+
+      // Call the specific analysis endpoint based on platform type
+      if (profile.platform_type === 'github') {
+        await analyzeGithub(profile.profile_url);
+      } else if (profile.platform_type === 'linkedin') {
+        await analyzeLinkedin(profile.profile_url);
+      } else {
+        alert('Re-analysis for this platform is not supported yet.');
+        return;
+      }
+
+      // Fetch updated social profiles and rubric scores
+      const socialRes = await getSocialProfiles();
+      setSocialProfiles(socialRes.data.social_profiles || []);
+
+      const profileRes = await getProfile();
+      setProfile(profileRes.data.user);
+
+      // Set flag that profiles have been analyzed
+      setHasAnalyzedProfiles(true);
+
+      // Log the updated rubric scores
+      console.log('Updated Rubric Scores:', profileRes.data.user.analysisScores);
+
+      alert(`${profile.platform_type} profile re-analyzed successfully!`);
+    } catch (error) {
+      console.error('Re-analysis error:', error);
+      setError(error.response?.data?.error || 'Failed to re-analyze profile');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Removed unused handleFetchAnalysisScores function
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -268,30 +383,63 @@ export default function Profile() {
                     <span className="font-medium capitalize">{profile.platform_type}</span>
                     <span className="text-gray-500 text-sm ml-2">{profile.profile_url}</span>
                   </div>
-                  {profile.last_analyzed ? (
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                      Analyzed
-                    </span>
-                  ) : (
-                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                      Not Analyzed
-                    </span>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {profile.last_analyzed ? (
+                      <button
+                        onClick={() => handleReAnalyzeProfile(profile)}
+                        className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                        aria-label="Re-analyze"
+                        title="Re-analyze profile"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="1.5"
+                          stroke="currentColor"
+                          className="w-5 h-5 text-indigo-600"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                          />
+                        </svg>
+                      </button>
+                    ) : (
+                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
+                        Not Analyzed
+                      </span>
+                    )}
+                    
+                    <button
+                      onClick={() => handleDeleteProfile(profile.id)}
+                      className="p-2 rounded-full hover:bg-red-100 transition-colors"
+                      aria-label="Delete"
+                      title="Delete profile"
+                      disabled={deletingProfile}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.5"
+                        stroke="currentColor"
+                        className="w-5 h-5 text-red-600"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-gray-600">No social profiles connected yet.</p>
-          )}
-          {socialProfiles.length > 0 && (
-            <div className="mt-4">
-              <button
-                onClick={handleAnalyzeProfiles}
-                className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700"
-              >
-                Analyze Profiles
-              </button>
-            </div>
           )}
         </div>
 
@@ -299,14 +447,14 @@ export default function Profile() {
          <button
           onClick={handleAnalyzeProfiles}
           disabled={analyzing || socialProfiles.length === 0}
-          className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 disabled:opacity-50 mr-4"
+          className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 disabled:opacity-50"
          >
           {analyzing ? 'Analyzing...' : 'Analyze Profiles'}
          </button>
         </div>
         
         <form onSubmit={handleAddSocialProfile}>
-          <h3 className="font-medium mb-2">Add New Profile</h3>
+          <h3 className="font-medium mb-2 mt-6">Add New Profile</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
@@ -350,34 +498,108 @@ export default function Profile() {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-indigo-700 mb-4">Technical Skills and Analysis Scores</h2>
+          
           {profile?.analysisScores ? (
-            <ul className="space-y-2">
-              {Object.entries(profile.analysisScores).map(([category, score]) => (
-                <li key={category} className="flex justify-between">
-                  <span className="font-medium capitalize">{category.replace('_', ' ')}</span>
-                  <span className="text-gray-700">{score}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-6">
+              {/* Technical Skills Scores */}
+              {profile.analysisScores.technical_skills && (
+                <div>
+                  <h3 className="font-medium mb-2">Technical Skills</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(profile.analysisScores.technical_skills).map(([skill, data]) => (
+                      <div key={skill} className="bg-gray-50 p-3 rounded">
+                        <div className="font-medium capitalize">
+                          {skill.replace(/_/g, ' ')}
+                        </div>
+                        <div className="text-2xl font-bold text-indigo-600">
+                          {typeof data === 'object' ? data.score : data}/5
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Social Blueprint Scores */}
+              {profile.analysisScores.social_blueprint && (
+                <div>
+                  <h3 className="font-medium mb-2">Social Profiles Analysis</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(profile.analysisScores.social_blueprint).map(([profile, data]) => (
+                      <div key={profile} className="bg-gray-50 p-3 rounded">
+                        <div className="font-medium capitalize">
+                          {profile.replace(/_/g, ' ')}
+                        </div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {typeof data === 'object' ? data.score : data}/5
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Personal Attributes */}
+              {profile.analysisScores.personal_attributes && (
+                <div>
+                  <h3 className="font-medium mb-2">Personal Attributes</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(profile.analysisScores.personal_attributes).map(([attr, data]) => (
+                      <div key={attr} className="bg-gray-50 p-3 rounded">
+                        <div className="font-medium capitalize">
+                          {attr.replace(/_/g, ' ')}
+                        </div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {typeof data === 'object' ? data.score : data}/5
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
-            <p className="text-gray-600">No analysis scores available. Please analyze your profiles.</p>
+            <div>
+              <p className="text-gray-600 mb-4">No analysis scores available. Please analyze your profiles.</p>
+              <button
+                onClick={handleAnalyzeProfiles}
+                disabled={analyzing || socialProfiles.length === 0}
+                className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {analyzing ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analyzing...
+                  </span>
+                ) : 'Analyze Profiles'}
+              </button>
+            </div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-indigo-700 mb-4">Technical Skills</h2>
-        
-        <p className="text-gray-600 mb-4">
-          Add your technical skills to help us find the best match for you. This feature will be available soon.
-        </p>
-        
-        <button
-          className="bg-gray-300 text-gray-700 py-2 px-4 rounded cursor-not-allowed"
-          disabled
-        >
-          Coming Soon
-        </button>
-      </div>
+        {/* UPDATED: Replace the "coming soon" message with the ProfileSummary component */}
+        <div className="mt-6">
+          {hasAnalyzedProfiles ? (
+            <ProfileSummary />
+          ) : (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-indigo-700 mb-4">Profile Summaries</h2>
+              <p className="text-gray-600 mb-4">
+                Profile summaries will be available after you analyze your social profiles.
+              </p>
+              <button
+                onClick={handleAnalyzeProfiles}
+                disabled={analyzing || socialProfiles.length === 0}
+                className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {analyzing ? 'Analyzing...' : 'Analyze Profiles'}
+              </button>
+            </div>
+          )}
+        </div>
     </div>
   );
 }

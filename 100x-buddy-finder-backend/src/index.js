@@ -10,6 +10,9 @@ const authRoutes = require('./api/auth');
 const profileRoutes = require('./api/profile');
 const analysisRoutes = require('./api/analysis');
 const matchesRoutes = require('./api/matches');
+const matchRequestsRouter = require('./api/match-requests');
+const notificationsRouter = require('./api/notifications');
+const connectionsRouter = require('./api/connections');
 
 // Load environment variables
 dotenv.config();
@@ -57,10 +60,13 @@ app.use('/api/profile', profileRoutes);
 console.log("Profile routes registered");
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/matches', matchesRoutes);
+app.use('/api/match-requests', matchRequestsRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/connections', connectionsRouter);
 
 // Basic route to test server
 app.get('/', (req, res) => {
-  res.json({ message: '100x Buddy Finder API is running' });
+  res.json({ message: 'Buddy Finder API is running' });
 });
 
 // Start server

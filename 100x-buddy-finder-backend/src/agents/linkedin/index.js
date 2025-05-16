@@ -1,216 +1,217 @@
-// src/agents/linkedin/index.js
-const axios = require('axios');
+// agents/linkedin/index.js
+const { LinkedInScraper } = require('./scraper');
+const { OpenAIAnalyzer } = require('./analyzer');
+require('dotenv').config();
 
-/**
- * Agent for analyzing LinkedIn profiles
- * Focus is on recent activity (last 3 months)
- */
 class LinkedInAgent {
   constructor() {
-    this.apiKey = process.env.GROQ_API_KEY;
     this.version = '1.0.0';
+    this.scraper = new LinkedInScraper();
+    this.analyzer = new OpenAIAnalyzer(process.env.OPENAI_API_KEY);
   }
   
-  /**
-   * Analyze a LinkedIn profile URL
-   * @param {string} profileUrl - LinkedIn profile URL
-   * @returns {Object} Analysis results
-   */
-  async analyze(profileUrl) {
+  // Extract username from LinkedIn URL
+  extractUsername(url) {
     try {
-      // Extract username from URL
-      const username = profileUrl.split('linkedin.com/in/')[1]?.split('/')[0] || 
-                       profileUrl.split('www.linkedin.com/in/')[1]?.split('/')[0];
+      // Handle different URL formats
+      // linkedin.com/in/username
+      // www.linkedin.com/in/username/
+      // https://linkedin.com/in/username
       
-      if (!username) {
-        throw new Error('Invalid LinkedIn URL. Expected format: linkedin.com/in/username');
+      // Remove protocol and www if present
+      const cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+      
+      // Split by slashes
+      const parts = cleanUrl.split('/');
+      
+      // Find the part after "in"
+      let usernameIndex = -1;
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i] === 'in') {
+          usernameIndex = i + 1;
+          break;
+        }
       }
       
-      console.log(`Analyzing LinkedIn profile for ${username}`);
+      if (usernameIndex === -1 || usernameIndex >= parts.length) {
+        throw new Error('Invalid LinkedIn URL format');
+      }
       
-      // Fetch LinkedIn profile data
-      const profileData = await this.fetchLinkedInData(username);
+      // Remove trailing slash if present
+      return parts[usernameIndex].replace(/\/$/, '');
+    } catch (error) {
+      throw new Error(`Could not extract username from URL: ${error.message}`);
+    }
+  }
+  
+  // Analyze a LinkedIn profile
+  async analyze(profileUrl) {
+    try {
+      console.log(`Analyzing LinkedIn profile: ${profileUrl}`);
       
-      // Analyze using direct API call
-      const analysis = await this.analyzeWithGroqDirect(profileData);
+      // Get username from URL
+      const username = this.extractUsername(profileUrl);
+      console.log(`Extracted LinkedIn username: ${username}`);
+      
+      // Scrape profile data
+      console.log('Scraping LinkedIn profile...');
+      const profileData = await this.scraper.scrapeProfile(username);
+      
+      // Analyze profile data using OpenAI
+      console.log('Analyzing LinkedIn profile data...');
+      const analysisResult = await this.analyzer.analyzeProfile(profileData);
+      
+      // Calculate scores
+      const scores = this.calculateScores(profileData, analysisResult);
+      
+      // Create summary
+      const summary = this.createSummary(profileData, analysisResult, scores);
       
       return {
-        raw: profileData,
-        summary: analysis.summary,
-        scores: analysis.scores,
+        raw: {
+          profile: profileData,
+          analysis: analysisResult
+        },
+        summary,
+        scores,
         version: this.version
       };
     } catch (error) {
       console.error('LinkedIn analysis error:', error);
-      throw new Error(`LinkedIn analysis failed: ${error.message}`);
-    }
-  }
-  
-  /**
-   * Fetch LinkedIn profile data
-   * Note: In a production environment, you would use LinkedIn API or a compliant data provider
-   * This is a simplified implementation for demonstration
-   */
-  async fetchLinkedInData(username) {
-    try {
-      // In a real implementation, this would call LinkedIn API or a data provider
-      // For demonstration, we're simulating the data
       
-      // Simulate a delay to mimic network request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Return simulated data - in production, this would be real data
+      // Return limited data if scraping fails
       return {
-        username,
-        fullName: this.capitalizeUsername(username),
-        headline: 'Software Engineer',
-        location: 'San Francisco Bay Area',
-        connections: 500,
-        // Focus on recent data - last 3 months
-        recentActivity: {
-          posts: [
-            { 
-              date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), 
-              content: 'Excited to share my latest project using React and Node.js!'
-            },
-            { 
-              date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), 
-              content: 'Just completed a course on advanced JavaScript patterns.'
-            }
-          ],
-          jobChanges: [],
-          certifications: [
-            {
-              name: 'AWS Certified Developer',
-              issuer: 'Amazon Web Services',
-              date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
-            }
-          ]
+        raw: {
+          profile_url: profileUrl,
+          error: error.message
         },
-        experience: [
-          {
-            title: 'Senior Software Engineer',
-            company: 'Tech Company',
-            duration: '2 years',
-            description: 'Developed scalable web applications using React and Node.js'
-          },
-          {
-            title: 'Software Developer',
-            company: 'Startup Inc',
-            duration: '3 years',
-            description: 'Built and maintained microservices using Python and Docker'
-          }
-        ],
-        education: [
-          {
-            school: 'University of Technology',
-            degree: 'Bachelor of Science in Computer Science',
-            years: '2015-2019'
-          }
-        ],
-        skills: ['JavaScript', 'Python', 'React', 'Node.js', 'Docker', 'AWS'],
-        recommendations: 5
-      };
-    } catch (error) {
-      console.error('LinkedIn data fetch error:', error);
-      
-      // Return basic data if fetch fails
-      return {
-        username,
-        fullName: this.capitalizeUsername(username),
-        headline: 'Software Professional',
-        skills: ['Software Development'],
-        recentActivity: { posts: [], jobChanges: [], certifications: [] }
-      };
-    }
-  }
-  
-  /**
-   * Capitalize a username for display
-   */
-  capitalizeUsername(username) {
-    return username
-      .split(/[-_]/)
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
-  }
-  
-  /**
-   * Direct API call to Groq
-   */
-  async analyzeWithGroqDirect(profileData) {
-    try {
-      const prompt = `
-        Analyze this LinkedIn profile data for a 100x Engineers course participant:
-        ${JSON.stringify(profileData, null, 2)}
-        
-        Focus specifically on activities and changes from the past 3 months.
-        
-        Evaluate the profile based on:
-        1. Recent technical skill indicators (last 3 months)
-        2. Recent professional experience changes
-        3. Recent network growth and engagement
-        4. Latest certifications or learning activities
-        
-        Return a JSON with:
-        1. A brief summary of the profile's recent activities and strengths
-        2. Scores (1-5) for the following categories:
-           - profile_quality: Overall LinkedIn profile strength
-           - technical: {
-               languages: Programming language proficiency indication,
-               frameworks: Framework knowledge indication,
-               complexity: Project complexity indication,
-               problem_solving: Problem-solving skill indication
-             }
-      `;
-      
-      // Using axios to call Groq API directly
-      const response = await axios.post(
-        'https://api.groq.com/openai/v1/chat/completions',
-        {
-          model: "llama3-70b-8192",
-          messages: [
-            {
-              role: "system",
-              content: "You are an AI assistant that analyzes LinkedIn profiles for technical skill assessment with a focus on recent activity (past 3 months). Return only valid JSON with a summary and scores."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          response_format: { type: "json_object" }
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      // Parse the JSON response
-      const content = response.data.choices[0].message.content;
-      return JSON.parse(content);
-    } catch (error) {
-      console.error('Groq direct API error:', error);
-      
-      // Fallback to basic analysis
-      return {
-        summary: "Failed to generate detailed analysis. Basic profile evaluation completed with focus on recent activity.",
+        summary: 'LinkedIn profile analysis failed. This could be due to privacy settings or rate limiting.',
         scores: {
-          profile_quality: 3,
+          profile_quality: 2,
           technical: {
-            languages: 3,
-            frameworks: 3,
+            languages: 2,
+            frameworks: 2,
             complexity: 2,
             problem_solving: 2
           }
-        }
+        },
+        version: this.version
       };
     }
   }
+  
+  // Calculate scores for matching
+  calculateScores(profileData, analysisResult) {
+    // Profile quality score
+    const profileQualityScore = this.calculateProfileQuality(profileData);
+    
+    // Extract technical scores from analysis
+    const technicalScores = analysisResult.technical_assessment || {
+      language_proficiency: 3,
+      framework_knowledge: 3,
+      project_complexity: 2,
+      problem_solving: 3
+    };
+    
+    return {
+      profile_quality: profileQualityScore,
+      technical: {
+        languages: technicalScores.language_proficiency,
+        frameworks: technicalScores.framework_knowledge,
+        complexity: technicalScores.project_complexity,
+        problem_solving: technicalScores.problem_solving
+      }
+    };
+  }
+  
+  // Calculate profile quality score
+  calculateProfileQuality(profileData) {
+    let score = 1; // Base score
+    
+    // Has summary/about
+    if (profileData.summary && profileData.summary.length > 30) {
+      score += 1;
+    }
+    
+    // Has profile image
+    if (profileData.profileImage) {
+      score += 0.5;
+    }
+    
+    // Has experience
+    if (profileData.experience && profileData.experience.length > 0) {
+      score += 1;
+    }
+    
+    // Has education
+    if (profileData.education && profileData.education.length > 0) {
+      score += 0.5;
+    }
+    
+    // Has skills
+    if (profileData.skills && profileData.skills.length > 3) {
+      score += 1;
+    }
+    
+    // Has recommendations
+    if (profileData.recommendations && profileData.recommendations > 0) {
+      score += 0.5;
+    }
+    
+    // Has certifications
+    if (profileData.certifications && profileData.certifications.length > 0) {
+      score += 0.5;
+    }
+    
+    return Math.min(5, Math.round(score));
+  }
+  
+  // Create a summary of the analysis
+  createSummary(profileData, analysisResult, scores) {
+    // Basic info
+    const basicInfo = {
+      name: profileData.name,
+      headline: profileData.headline,
+      location: profileData.location
+    };
+    
+    // Experience summary
+    const experience = profileData.experience && profileData.experience.length > 0
+      ? profileData.experience.slice(0, 3).map(exp => ({
+          title: exp.title,
+          company: exp.company,
+          duration: exp.duration
+        }))
+      : [];
+    
+    // Skills summary
+    const skills = profileData.skills && profileData.skills.length > 0
+      ? profileData.skills.slice(0, 10)
+      : [];
+    
+    // Analysis insights
+    const insights = analysisResult.insights || {
+      strengths: ['Technical experience', 'Professional background'],
+      areas_for_growth: ['Continuous learning'],
+      collaboration_potential: 'Moderate to high'
+    };
+    
+    return {
+      basic_info: basicInfo,
+      experience,
+      skills,
+      insights,
+      scores: {
+        profile_quality: scores.profile_quality,
+        languages: scores.technical.languages,
+        frameworks: scores.technical.frameworks,
+        complexity: scores.technical.complexity,
+        problem_solving: scores.technical.problem_solving
+      }
+    };
+  }
 }
 
+// Export an instance of the agent
 const linkedinAgent = new LinkedInAgent();
 module.exports = { linkedinAgent };

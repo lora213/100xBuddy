@@ -12,14 +12,17 @@ router.post('/github', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { profile_url } = req.body;
-    
+
     if (!profile_url) {
       return res.status(400).json({ error: 'GitHub profile URL is required' });
     }
-    
+
     // Analyze the GitHub profile
     const analysisResult = await githubAgent.analyze(profile_url);
-    
+
+    // Log the analysis result
+    console.log('GitHub Analysis Result:', analysisResult);
+
     // Store the analysis result
     const { data: reportData, error: reportError } = await req.supabase
       .from('analysis_reports')
@@ -34,11 +37,14 @@ router.post('/github', authenticateToken, async (req, res) => {
         }
       ])
       .select();
-    
+
     if (reportError) {
       throw reportError;
     }
-    
+
+    // Log rubric scores before storing
+    console.log('Storing Rubric Scores:', analysisResult.scores);
+
     // Store basic scores in rubric_scores table
     const { data: scoreData, error: scoreError } = await req.supabase
       .from('rubric_scores')
@@ -52,11 +58,11 @@ router.post('/github', authenticateToken, async (req, res) => {
         }
       ])
       .select();
-    
+
     if (scoreError) {
       throw scoreError;
     }
-    
+
     res.json({
       message: 'GitHub profile analyzed successfully',
       summary: analysisResult.summary,
@@ -217,7 +223,9 @@ router.post('/analyze-all', authenticateToken, async (req, res) => {
 });
 
 // Helper function to store analysis results
-async function storeAnalysisResults(userId, profile, analysisResult, supabaseAdmin) {
+const storeAnalysisResults = async (userId, profile, analysisResult, supabaseAdmin) => {
+  console.log(`Storing rubric scores for ${profile.platform_type} profile:`, analysisResult.scores);
+
   // Store the analysis report
   await supabaseAdmin
     .from('analysis_reports')
@@ -227,6 +235,8 @@ async function storeAnalysisResults(userId, profile, analysisResult, supabaseAdm
       raw_analysis: analysisResult.raw,
       summary: analysisResult.summary,
       score_breakdown: analysisResult.scores,
+      summary_text: analysisResult.summary.summary_text || '',
+      alignment_score: analysisResult.summary.alignment_score || 0,
       agent_version: analysisResult.version
     }]);
     
@@ -308,5 +318,223 @@ const twitterAgent = {
     };
   }
 };
+
+// Added an endpoint to fetch analysis reports based on user ID.
+router.get('/analysis-reports', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch analysis reports for the user
+    const { data: reports, error } = await req.supabase
+      .from('analysis_reports')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching analysis reports:', error);
+      throw error;
+    }
+
+    res.json(reports);
+  } catch (error) {
+    console.error('Failed to fetch analysis reports:', error);
+    res.status(500).json({ error: 'Failed to fetch analysis reports' });
+  }
+});
+
+router.get('/profile-summaries', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const platform = req.query.platform; // Optional filter by platform
+    
+    let query = req.supabase
+      .from('analysis_reports')
+      .select('id, platform, summary_text, alignment_score, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    // Filter by platform if specified
+    if (platform) {
+      query = query.eq('platform', platform);
+    }
+    
+    // Get the latest report for each platform
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    // Group by platform and get the most recent for each
+    const latestReports = {};
+    data.forEach(report => {
+      if (!latestReports[report.platform] || 
+          new Date(report.created_at) > new Date(latestReports[report.platform].created_at)) {
+        latestReports[report.platform] = report;
+      }
+    });
+    
+    res.json({
+      summaries: Object.values(latestReports)
+    });
+  } catch (error) {
+    console.error('Error fetching profile summaries:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/scores', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Fetch rubric scores for the user
+    const { data: scores, error } = await req.supabase
+      .from('rubric_scores')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Error fetching analysis scores:', error);
+      throw error;
+    }
+    
+    // Group scores by category and subcategory
+    const groupedScores = scores.reduce((acc, score) => {
+      if (!acc[score.category]) {
+        acc[score.category] = {};
+      }
+      
+      acc[score.category][score.subcategory] = {
+        score: score.score,
+        metadata: score.metadata
+      };
+      
+      return acc;
+    }, {});
+    
+    res.json({
+      scores: groupedScores
+    });
+  } catch (error) {
+    console.error('Failed to fetch analysis scores:', error);
+    res.status(500).json({ error: 'Failed to fetch analysis scores' });
+  }
+});
+
+router.get('/profile-alignment-scores', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get the latest analysis report for each platform
+    const { data, error } = await req.supabase
+      .from('analysis_reports')
+      .select('id, platform, alignment_score, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Group by platform and get the most recent for each
+    const latestScores = {};
+    data.forEach(report => {
+      if (!latestScores[report.platform] || 
+          new Date(report.created_at) > new Date(latestScores[report.platform].created_at)) {
+        latestScores[report.platform] = report;
+      }
+    });
+    
+    // Extract just the scores
+    const alignmentScores = Object.values(latestScores).map(report => ({
+      platform: report.platform,
+      score: report.alignment_score || 50 // Default to 50 if missing
+    }));
+    
+    res.json({
+      alignmentScores
+    });
+  } catch (error) {
+    console.error('Error fetching profile alignment scores:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Also add an endpoint to get the overall buddy match score
+router.get('/buddy-match-score', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get the latest alignment scores
+    const { data: scores, error: scoresError } = await req.supabase
+      .from('analysis_reports')
+      .select('platform, alignment_score, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (scoresError) throw scoresError;
+    
+    // Group by platform
+    const latestScores = {};
+    scores.forEach(report => {
+      if (!latestScores[report.platform] || 
+          new Date(report.created_at) > new Date(latestScores[report.platform].created_at)) {
+        latestScores[report.platform] = report.alignment_score || 50;
+      }
+  });
+  // Calculate average score
+  const scoreValues = Object.values(latestScores);
+  const avgScore = scoreValues.length > 0
+    ? Math.round(scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length)
+    : 0;
+  
+  // Get user profile completeness
+  const { data: user, error: userError } = await req.supabase
+    .from('users')
+    .select('full_name, learning_style, collaboration_preference, mentorship_type')
+    .eq('id', userId)
+    .single();
+  
+  if (userError) throw userError;
+  
+  // Calculate profile completeness score (25% for each field)
+  const profileFields = [
+    !!user.full_name,
+    !!user.learning_style,
+    !!user.collaboration_preference,
+    !!user.mentorship_type
+  ];
+  
+  const profileCompleteness = Math.round(
+    (profileFields.filter(Boolean).length / profileFields.length) * 100
+  );
+  
+  // Get social profile count
+  const { count: profileCount, error: profileError } = await req.supabase
+    .from('social_profiles')
+    .select('id', { count: 'exact' })
+    .eq('user_id', userId);
+  
+  if (profileError) throw profileError;
+  
+  // Calculate social profiles score (max 100% for 3+ profiles)
+  const socialProfilesScore = Math.min(100, Math.round((profileCount / 3) * 100));
+  
+  // Calculate overall buddy match score (weighted average)
+  const buddyMatchScore = Math.round(
+    (avgScore * 0.5) + // 50% weight to analysis scores
+    (profileCompleteness * 0.3) + // 30% weight to profile completeness
+    (socialProfilesScore * 0.2) // 20% weight to number of social profiles
+  );
+  
+  res.json({
+    buddyMatchScore,
+    componentScores: {
+      analysisScore: avgScore,
+      profileCompleteness,
+      socialProfilesScore
+    }
+  });
+} catch (error) {
+  console.error('Error calculating buddy match score:', error);
+  res.status(500).json({ error: error.message });
+}
+});
 
 module.exports = router;

@@ -304,14 +304,22 @@ const calculateCompatibility = (user1Scores, user2Scores) => {
         .eq('user_id', userId);
       
       if (scoresError) throw scoresError;
+      console.log(`User ${userId} has ${userScores.length} rubric scores`);
       
-      // Find all other users with rubric scores
-      const { data: allUsers, error: usersError } = await supabase
+      // Use supabase admin client to get ALL users
+      const { data: allUsersData, error: usersError } = await supabase
         .from('users')
-        .select('id, full_name, email')
-        .neq('id', userId);
+        .select('id, full_name, email, learning_style, collaboration_preference, mentorship_type');
       
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
+        throw usersError;
+      }
+      
+      // Manually filter out the current user
+      const allUsers = allUsersData.filter(user => user.id !== userId);
+      
+      console.log(`Found ${allUsersData.length} total users, ${allUsers.length} potential matches (excluding self)`);
       
       // Calculate compatibility with each user
       const matches = [];
@@ -331,23 +339,33 @@ const calculateCompatibility = (user1Scores, user2Scores) => {
           
           if (!matchScores || matchScores.length === 0) {
             // Skip users with no scores
+            console.log(`User ${potentialMatch.id} (${potentialMatch.full_name}) has no rubric scores, skipping`);
             continue;
           }
           
+          console.log(`Calculating compatibility with user ${potentialMatch.id} (${potentialMatch.full_name}) who has ${matchScores.length} rubric scores`);
+          
           // Calculate compatibility
           const compatibility = calculateCompatibility(userScores, matchScores);
+          console.log(`Compatibility score with ${potentialMatch.full_name}: ${compatibility.overall}%`);
           
-          // Add to matches
+          // IMPORTANT: Create match object with expected fields for frontend
           matches.push({
+            id: potentialMatch.id,
             user_id: userId,
             match_id: potentialMatch.id,
             matched_user: {
               id: potentialMatch.id,
               full_name: potentialMatch.full_name,
-              email: potentialMatch.email
+              email: potentialMatch.email,
+              learning_style: potentialMatch.learning_style,
+              collaboration_preference: potentialMatch.collaboration_preference,
+              mentorship_type: potentialMatch.mentorship_type
             },
             compatibility_score: compatibility.overall,
-            match_details: compatibility
+            match_details: compatibility,
+            match_reason: generateMatchReason(compatibility),
+            status: 'pending' // Add default status for frontend compatibility
           });
         } catch (error) {
           console.error(`Error calculating compatibility with user ${potentialMatch.id}:`, error);
@@ -356,6 +374,7 @@ const calculateCompatibility = (user1Scores, user2Scores) => {
       
       // Sort by compatibility score (highest first)
       matches.sort((a, b) => b.compatibility_score - a.compatibility_score);
+      console.log(`Found ${matches.length} potential matches after compatibility calculations`);
       
       // Return top 10 matches
       return matches.slice(0, 10);
@@ -365,7 +384,39 @@ const calculateCompatibility = (user1Scores, user2Scores) => {
     }
   };
   
+  // Helper function to generate a match reason based on compatibility scores
+  function generateMatchReason(compatibility) {
+    const { overall, components } = compatibility;
+    
+    if (!components) {
+      return overall >= 80 ? "You have excellent overall compatibility." :
+             overall >= 60 ? "You have good overall compatibility." :
+             overall >= 40 ? "You have moderate compatibility." :
+             "This could be an interesting connection to explore.";
+    }
+    
+    if (overall >= 80) {
+      return "You have excellent overall compatibility with this user.";
+    } else if (overall >= 60) {
+      return "You have good overall compatibility with this user.";
+    } else if (overall >= 40) {
+      if (components.technical && components.technical.score >= 70) {
+        return "You have strong technical compatibility with this user.";
+      } else if (components.social && components.social.score >= 70) {
+        return "You have strong social compatibility with this user.";
+      } else if (components.personal && components.personal.score >= 70) {
+        return "Your personal attributes align well with this user.";
+      }
+      return "You have moderate compatibility with this user.";
+    } else {
+      return "This could be an interesting connection to explore.";
+    }
+  }
+  
+  // Make sure this function exists - assuming it's already implemented
+  // If not, you'll need to implement the calculateCompatibility function
+  
   module.exports = {
-    calculateCompatibility,
+    calculateCompatibility, // Make sure this is defined
     findMatches
   };
