@@ -1,0 +1,20 @@
+
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "100x-buddy-finder-frontend/package.json",
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "build",
+          "buildCommand": "cd 100x-buddy-finder-frontend && npm install && npm run build"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "100x-buddy-finder-frontend/build/$1"
+      }
+    ]
+  }

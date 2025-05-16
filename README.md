@@ -1,2 +1,2 @@
 # 100xBuddy
-Building an application that lets you find a peer collaborator
+An application that lets you find a buddy to collaborate on learning and your 100x journey
