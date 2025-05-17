@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { signOut, useSession } from 'next-auth/react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useCustomAuth } from '@/lib/custom-auth';
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { user, logout } = useCustomAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // Navigation items with their paths and labels
@@ -28,7 +29,8 @@ export default function Navbar() {
   
   // Handle sign out
   const handleSignOut = () => {
-    signOut({ callbackUrl: '/' });
+    logout();
+    router.push('/custom-login');
   };
   
   return (
@@ -64,7 +66,7 @@ export default function Navbar() {
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             <div className="ml-3 relative">
               <div className="flex items-center">
-                <span className="mr-3">{session?.user?.name}</span>
+                <span className="mr-3">{user?.full_name || user?.email}</span>
                 <button
                   type="button"
                   onClick={handleSignOut}

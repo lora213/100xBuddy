@@ -1,85 +1,61 @@
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import axios from 'axios';
+'use client';
 
-// Direct API URL (not using our api.ts to avoid circular dependencies)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { useCustomAuth } from './custom-auth';
+import { useRouter } from 'next/navigation';
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+// This file provides compatibility with NextAuth function calls
+// while using our custom authentication system underneath
+
+// Mock session type to match NextAuth format
+type Session = {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  token: string;
+};
+
+// Mock NextAuth's useSession hook
+export function useSession() {
+  const { user, token, isLoading } = useCustomAuth();
+  
+  return {
+    data: user ? {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.full_name || user.email
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+      token
+    } as Session : null,
+    status: isLoading ? "loading" : user ? "authenticated" : "unauthenticated",
+    update: async () => true
+  };
+}
 
-        try {
-          // Make direct request to the backend instead of using our api client
-          const response = await axios.post(`${API_URL}/auth/login`, {
-            email: credentials.email,
-            password: credentials.password,
-          });
-          
-          // Handle the response according to your backend's structure
-          // This structure should match what your backend returns
-          const { user, token } = response.data;
-          
-          if (user && token) {
-            // Return the user object with token
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.full_name || user.name,
-              token: token,
-            };
-          }
-          
-          return null;
-        } catch (error) {
-          console.error('Auth error:', error);
-          return null;
-        }
-      },
-    }),
-  ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      // If user just signed in, add their data to the token
-      if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.name = user.name;
-        token.token = user.token; // Store the auth token
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      // Send token and user info to client
-      if (token) {
-        session.user = {
-          id: token.id as string,
-          email: token.email as string,
-          name: token.name as string,
-        };
-        session.token = token.token as string;
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
-  debug: process.env.NODE_ENV === 'development',
+// Mock NextAuth's signIn function
+export function signIn(provider?: string, options?: any) {
+  // We can't actually implement this mock since we need credentials
+  // But we can redirect to our login page
+  const router = useRouter();
+  router.push('/custom-login');
+  return Promise.resolve({ ok: false, error: "Use custom login page" });
+}
+
+// Mock NextAuth's signOut function
+export function signOut(options?: any) {
+  const { logout } = useCustomAuth();
+  logout();
+  return Promise.resolve({ url: '/custom-login' });
+}
+
+// Mock NextAuth options
+export const authOptions = {
+  providers: [],
+  session: { strategy: 'jwt' },
+  pages: { signIn: '/custom-login' }
 };
 
 export default authOptions;
+  

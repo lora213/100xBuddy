@@ -95,6 +95,8 @@ export default function IkigaiProfilePage() {
       setSaving(true);
       setError('');
 
+      console.log('Saving Ikigai profile with token:', token.substring(0, 10) + '...');
+
       // Send the Ikigai data to the API
       const response = await axios.post(
         `${API_URL}/profile/ikigai`, 
@@ -107,11 +109,13 @@ export default function IkigaiProfilePage() {
         }
       );
 
+      console.log('Save response:', response.data);
+      
       // Redirect to dashboard or profile page
-      router.push('/custom-dashboard');
-    } catch (err) {
+      router.push('/dashboard');
+    } catch (err: any) {
       console.error('Error saving Ikigai profile:', err);
-      setError('Failed to save your Ikigai profile. Please try again.');
+      setError(`Failed to save your Ikigai profile: ${err.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }

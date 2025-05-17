@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 
 // Define protected routes that require authentication
 const protectedRoutes = [
@@ -8,6 +7,8 @@ const protectedRoutes = [
   '/profile',
   '/matches',
   '/connections',
+  '/ikigai',
+  '/custom-dashboard',
 ];
 
 // Define public routes that don't require authentication
@@ -15,7 +16,15 @@ const publicRoutes = [
   '/',
   '/login',
   '/register',
+  '/custom-login',
+  '/custom-register',
 ];
+
+// Helper function to get cookie value
+function getCookie(request: NextRequest, name: string) {
+  const cookie = request.cookies.get(name);
+  return cookie ? cookie.value : null;
+}
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -38,15 +47,12 @@ export async function middleware(request: NextRequest) {
   try {
     // For protected routes, check authentication
     if (isProtectedRoute) {
-      const token = await getToken({ 
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET 
-      });
+      // Check for custom auth token cookie
+      const customAuthToken = getCookie(request, 'access_token');
       
       // If no token found, redirect to login
-      if (!token) {
-        const url = new URL('/login', request.url);
-        // Add the original URL as a parameter to redirect back after login
+      if (!customAuthToken) {
+        const url = new URL('/custom-login', request.url);
         url.searchParams.set('callbackUrl', encodeURI(request.url));
         return NextResponse.redirect(url);
       }
@@ -54,14 +60,12 @@ export async function middleware(request: NextRequest) {
     
     // For public routes (except homepage), if user is already authenticated, redirect to dashboard
     if (isPublicRoute && path !== '/') {
-      const token = await getToken({ 
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET 
-      });
+      // Check for custom auth token cookie
+      const customAuthToken = getCookie(request, 'access_token');
       
-      if (token) {
+      if (customAuthToken) {
         // If already logged in and trying to access login/register, redirect to dashboard
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        return NextResponse.redirect(new URL('/custom-dashboard', request.url));
       }
     }
     

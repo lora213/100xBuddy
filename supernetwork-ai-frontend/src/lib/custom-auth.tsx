@@ -47,6 +47,22 @@ const AuthContext = createContext<AuthContextType>({
 // API URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+// Function to set a cookie
+const setCookie = (name: string, value: string, days: number) => {
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + (value || "") + expires + "; path=/";
+};
+
+// Function to remove a cookie
+const removeCookie = (name: string) => {
+  document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+};
+
 // Provider component
 export const CustomAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -71,13 +87,18 @@ export const CustomAuthProvider = ({ children }: { children: ReactNode }) => {
           if (response.data && response.data.user) {
             setUser(response.data.user);
             setToken(storedToken);
+            
+            // Ensure the cookie is set as well
+            setCookie('access_token', storedToken, 30);
           } else {
             // Invalid response, clear token
             localStorage.removeItem('access_token');
+            removeCookie('access_token');
           }
         } catch (error) {
           console.error('Failed to fetch user profile:', error);
           localStorage.removeItem('access_token');
+          removeCookie('access_token');
         }
       }
       
@@ -102,6 +123,9 @@ export const CustomAuthProvider = ({ children }: { children: ReactNode }) => {
         // Store the access token in localStorage
         localStorage.setItem('access_token', session.access_token);
         
+        // Also set it as a cookie for the middleware
+        setCookie('access_token', session.access_token, 30); // 30 days
+        
         // Also store refresh token if needed
         if (session.refresh_token) {
           localStorage.setItem('refresh_token', session.refresh_token);
@@ -123,6 +147,8 @@ export const CustomAuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    // Clear cookie as well
+    removeCookie('access_token');
     setUser(null);
     setToken(null);
     router.push('/custom-login');
@@ -165,4 +191,3 @@ export const CustomAuthProvider = ({ children }: { children: ReactNode }) => {
 
 // Custom hook for easy access to the auth context
 export const useCustomAuth = () => useContext(AuthContext);
-

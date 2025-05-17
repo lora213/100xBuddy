@@ -1,30 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return new NextResponse(
-        JSON.stringify({
-          status: 'error',
-          message: 'You must be logged in.',
-        }),
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json({
-      status: 'success',
-      data: { user: session.user },
-    });
-  } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json(
-      { status: 'error', message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+// Mock NextAuth API route to avoid 404 errors
+export function GET(req: NextRequest) {
+  return NextResponse.json(null);
 }
+
+export async function POST(req: NextRequest) {
+  return NextResponse.json({
+    error: "Use CustomAuthProvider instead of NextAuth",
+  }, { status: 200 });
+}
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
