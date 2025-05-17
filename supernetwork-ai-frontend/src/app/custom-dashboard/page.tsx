@@ -179,38 +179,7 @@ export default function CustomDashboard() {
               </div>
             </div>
           </div>
-          
-          {/* Test API Card */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dt className="text-lg font-medium text-gray-900 truncate">
-                    Test API
-                  </dt>
-                  <dd className="flex items-center text-sm text-gray-500">
-                    Test your API connections
-                  </dd>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 px-5 py-3">
-              <div className="text-sm">
-                <Link 
-                  href="/test-api"
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
-                >
-                  Go to API Test <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-          
+                    
           {/* Ikigai Card */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
@@ -242,15 +211,131 @@ export default function CustomDashboard() {
             </div>
           </div>
         </div>
-        
-        {/* Raw Token Info (for debugging) */}
-        <div className="mt-8 bg-gray-50 p-4 rounded border border-gray-200">
-          <h3 className="text-md font-medium text-gray-700 mb-2">Auth Debug Info</h3>
-          <div className="text-xs font-mono overflow-auto max-h-32 bg-gray-100 p-2 rounded">
-            <p>User ID: {user?.id}</p>
-            <p>Token: {token ? `${token.substring(0, 20)}...` : 'None'}</p>
-          </div>
-        </div>
+                
+{/* Social Profiles Card */}
+<div className="bg-white overflow-hidden shadow rounded-lg">
+  <div className="p-5">
+    <div className="flex items-center">
+      <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+        <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m1.414-1.414a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" />
+        </svg>
+      </div>
+      <div className="ml-5 w-0 flex-1">
+        <dt className="text-lg font-medium text-gray-900 truncate">
+          Social Profiles
+        </dt>
+        <dd className="flex items-center text-sm text-gray-500">
+          Connect GitHub, LinkedIn and more
+        </dd>
+      </div>
+    </div>
+  </div>
+  <div className="bg-gray-50 px-5 py-3">
+    <div className="text-sm">
+      <Link 
+        href="/profile/social"
+        className="font-medium text-indigo-600 hover:text-indigo-500"
+      >
+        Manage Profiles <span aria-hidden="true">&rarr;</span>
+      </Link>
+    </div>
+  </div>
+</div>
+
+{/* Working Style Card */}
+<div className="bg-white overflow-hidden shadow rounded-lg">
+  <div className="p-5">
+    <div className="flex items-center">
+      <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+        <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+      </div>
+      <div className="ml-5 w-0 flex-1">
+        <dt className="text-lg font-medium text-gray-900 truncate">
+          Working Style
+        </dt>
+        <dd className="flex items-center text-sm text-gray-500">
+          Set your work preferences
+        </dd>
+      </div>
+    </div>
+  </div>
+  <div className="bg-gray-50 px-5 py-3">
+    <div className="text-sm">
+      <Link 
+        href="/profile/working-style"
+        className="font-medium text-indigo-600 hover:text-indigo-500"
+      >
+        Set Preferences <span aria-hidden="true">&rarr;</span>
+      </Link>
+    </div>
+  </div>
+</div>
+
+{/* Connection Card */}
+<div className="bg-white overflow-hidden shadow rounded-lg">
+  <div className="p-5">
+    <div className="flex items-center">
+      <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+        <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </div>
+      <div className="ml-5 w-0 flex-1">
+        <dt className="text-lg font-medium text-gray-900 truncate">
+          Connections
+        </dt>
+        <dd className="flex items-center text-sm text-gray-500">
+          Manage your network
+        </dd>
+      </div>
+    </div>
+  </div>
+  <div className="bg-gray-50 px-5 py-3">
+    <div className="text-sm">
+      <Link 
+        href="/connections"
+        className="font-medium text-indigo-600 hover:text-indigo-500"
+      >
+        View Connections <span aria-hidden="true">&rarr;</span>
+      </Link>
+    </div>
+  </div>
+</div>
+
+{/* Settings Card */}
+<div className="bg-white overflow-hidden shadow rounded-lg">
+  <div className="p-5">
+    <div className="flex items-center">
+      <div className="flex-shrink-0 bg-gray-500 rounded-md p-3">
+        <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </div>
+      <div className="ml-5 w-0 flex-1">
+        <dt className="text-lg font-medium text-gray-900 truncate">
+          Settings
+        </dt>
+        <dd className="flex items-center text-sm text-gray-500">
+          Privacy and preferences
+        </dd>
+      </div>
+    </div>
+  </div>
+  <div className="bg-gray-50 px-5 py-3">
+    <div className="text-sm">
+      <Link 
+        href="/profile/settings"
+        className="font-medium text-indigo-600 hover:text-indigo-500"
+      >
+        Manage Settings <span aria-hidden="true">&rarr;</span>
+      </Link>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   );
