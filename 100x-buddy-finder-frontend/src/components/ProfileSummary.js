@@ -1,4 +1,4 @@
-// Fixed ProfileSummary.js
+// src/components/ProfileSummary.js
 
 import React, { useState, useEffect } from 'react';
 import { getProfileSummaries } from '../services/api';

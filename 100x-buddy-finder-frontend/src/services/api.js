@@ -27,6 +27,7 @@ api.interceptors.request.use(
 
 // Auth endpoints
 export const login = (email, password) => {
+  console.log('Making login request to:', API_URL + '/auth/login');
   return api.post('/auth/login', { email, password });
 };
 

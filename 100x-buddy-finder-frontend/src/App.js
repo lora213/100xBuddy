@@ -12,7 +12,6 @@ import Navbar from './components/Navbar';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 // Protected route component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -32,7 +31,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-100">
+      <div className="App">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -110,4 +109,3 @@ function App() {
 }
 
 export default App;
-

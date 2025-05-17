@@ -3,7 +3,6 @@ console.log("========== SERVER STARTING ==========");
 console.log("Time:", new Date().toISOString());
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
 const authRoutes = require('./api/auth');
@@ -21,9 +20,17 @@ dotenv.config();
 const app = express();
 
 // Apply middleware
-app.use(cors());
-app.use(helmet());
-app.use(express.json());
+app.use(cors()); // Your cors config here
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+
+// Debugging middleware to check req.body
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log('Headers:', req.headers['content-type']);
+  console.log('Body:', req.body);
+  next();
+});
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;

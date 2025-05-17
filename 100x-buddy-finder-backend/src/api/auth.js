@@ -33,19 +33,30 @@ router.post('/refresh-token', async (req, res) => {
 
 router.post('/refresh', async (req, res) => {
   try {
-    const refreshToken = req.cookies['refresh_token'] || req.body.refresh_token;
+
+    if (!req.body) {
+      return res.status(400).json({ error: 'Request body is missing' });
+    }
+
+    const { refresh_token } = req.body;
     
-    if (!refreshToken) {
-      return res.status(401).json({ error: 'Refresh token is required' });
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Refresh token is required' });
     }
     
     // Use Supabase to refresh the token
-    const { data, error } = await req.supabase.auth.refreshSession({ refresh_token: refreshToken });
-    
-    if (error) {
-      throw error;
+    // Get user by refresh token
+    const { data: user, error: userError } = await req.supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('refresh_token', refresh_token)
+      .single();
+
+    if (userError || !user) {
+        console.log('User not found with refresh token');
+        return res.status(401).json({ error: 'Invalid refresh token' });
     }
-    
+      
     res.json({
       token: data.session.access_token,
       refresh_token: data.session.refresh_token
@@ -105,9 +116,16 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
   try {
+
+    console.log('Login request received');
+    console.log('Full request body:', req.body);
+    console.log('Headers:', req.headers);
+
+    // Safely destructure with defaults
     const { email, password } = req.body;
     
     if (!email || !password) {
+      console.log('Missing email or password:', { email: !!email, password: !!password });
       return res.status(400).json({ error: 'Email and password are required' });
     }
     
@@ -134,7 +152,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(401).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 

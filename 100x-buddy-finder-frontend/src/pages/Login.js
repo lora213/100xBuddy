@@ -17,6 +17,14 @@ export default function Login() {
   
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    console.log('Attempting login with exact data:', {
+      email,
+      password: password ? '(password provided)' : '(no password)',
+      emailLength: email?.length,
+      passwordLength: password?.length
+    });
+
     if (!email || !password) {
       setError('Email and password are required');
       return;
@@ -25,8 +33,10 @@ export default function Login() {
     try {
       setLoading(true);
       setError('');
-      
+
+      console.log('Attempting login with:', email);
       const response = await login(email, password);
+      console.log('Login response:', response.data);
       
       // Save auth token to localStorage
       localStorage.setItem('token', response.data.token);

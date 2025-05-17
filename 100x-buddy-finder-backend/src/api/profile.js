@@ -622,9 +622,130 @@ router.put('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Working Style endpoints
+router.post('/working-style', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const workingStyleData = req.body;
+    
+    console.log("Saving working style for user:", userId);
+    
+    // Check if working style already exists
+    const { data: existing, error: checkError } = await req.supabase
+      .from('working_styles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows returned
+      throw checkError;
+    }
+    
+    let result;
+    if (existing) {
+      // Update existing working style
+      const { data, error } = await req.supabase
+        .from('working_styles')
+        .update({
+          communication_style: workingStyleData.communicationStyle,
+          work_hours: workingStyleData.workHours,
+          decision_making: workingStyleData.decisionMaking,
+          feedback_preference: workingStyleData.feedbackPreference,
+          additional_notes: workingStyleData.additionalNotes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = data;
+    } else {
+      // Insert new working style
+      const { data, error } = await req.supabase
+        .from('working_styles')
+        .insert([{
+          user_id: userId,
+          communication_style: workingStyleData.communicationStyle,
+          work_hours: workingStyleData.workHours,
+          decision_making: workingStyleData.decisionMaking,
+          feedback_preference: workingStyleData.feedbackPreference,
+          additional_notes: workingStyleData.additionalNotes
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = data;
+    }
+    
+    res.json({
+      message: 'Working style saved successfully',
+      workingStyle: result
+    });
+  } catch (error) {
+    console.error('Save working style error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/working-style', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const { data, error } = await req.supabase
+      .from('working_styles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    res.json({
+      workingStyle: data || null
+    });
+  } catch (error) {
+    console.error('Get working style error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/working-style', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const workingStyleData = req.body;
+    
+    const { data, error } = await req.supabase
+      .from('working_styles')
+      .update({
+        communication_style: workingStyleData.communicationStyle,
+        work_hours: workingStyleData.workHours,
+        decision_making: workingStyleData.decisionMaking,
+        feedback_preference: workingStyleData.feedbackPreference,
+        additional_notes: workingStyleData.additionalNotes,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    res.json({
+      message: 'Working style updated successfully',
+      workingStyle: data
+    });
+  } catch (error) {
+    console.error('Update working style error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/test', (req, res) => {
     console.log("Test route hit!");
     res.json({ message: 'Test route working' });
-  });  
+  });
 
 module.exports = router;
