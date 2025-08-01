@@ -191,7 +191,7 @@ export default function MatchesPage() {
           onClick={() => filterByType('all')}
           className={`px-4 py-2 font-medium text-sm border-b-2 ${
             activeFilter === 'all' 
-              ? 'border-indigo-600 text-indigo-600' 
+              ? 'border-orange-600 text-orange-600' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -201,7 +201,7 @@ export default function MatchesPage() {
           onClick={() => filterByType('cofounder')}
           className={`px-4 py-2 font-medium text-sm border-b-2 ${
             activeFilter === 'cofounder' 
-              ? 'border-indigo-600 text-indigo-600' 
+              ? 'border-orange-600 text-orange-600' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -211,7 +211,7 @@ export default function MatchesPage() {
           onClick={() => filterByType('teammate')}
           className={`px-4 py-2 font-medium text-sm border-b-2 ${
             activeFilter === 'teammate' 
-              ? 'border-indigo-600 text-indigo-600' 
+              ? 'border-orange-600 text-orange-600' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -221,7 +221,7 @@ export default function MatchesPage() {
           onClick={() => filterByType('client')}
           className={`px-4 py-2 font-medium text-sm border-b-2 ${
             activeFilter === 'client' 
-              ? 'border-indigo-600 text-indigo-600' 
+              ? 'border-orange-600 text-orange-600' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -232,7 +232,7 @@ export default function MatchesPage() {
       {/* Match results */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : filteredMatches.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -306,10 +306,10 @@ function MatchCard({ match }: { match: Match }) {
       </div>
       
       <div className="px-5 py-3 bg-gray-50 flex justify-between">
-        <button className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+        <button className="text-sm text-orange-600 hover:text-orange-800 font-medium">
           View Profile
         </button>
-        <button className="text-sm bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700">
+        <button className="text-sm bg-orange-600 text-white px-3 py-1 rounded-md hover:bg-orange-700">
           Connect
         </button>
       </div>

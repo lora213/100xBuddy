@@ -1,13 +1,15 @@
+// src/app/custom-dashboard/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCustomAuth } from '@/lib/custom-auth';
+import { useCustomAuth} from '@/lib/custom-auth';
+
 
 export default function CustomDashboardPage() {
   const router = useRouter();
-  const { user, isLoading, logout } = useCustomAuth();
+  const { user, isLoading, logout }: { user: User | null; isLoading: boolean; logout: () => void } = useCustomAuth();
   const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export default function CustomDashboardPage() {
     if (user && !isLoading) {
       // You could fetch additional profile data here if needed
       setProfileData({
-        email: user.email,
+        email: user?.email || 'No Email',
         name: user.full_name || 'New User',
         profileStatus: 'Incomplete'
       });
@@ -27,7 +29,7 @@ export default function CustomDashboardPage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-700">Loading...</p>
         </div>
       </div>
@@ -49,7 +51,7 @@ export default function CustomDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Nav Bar */}
-      <header className="bg-indigo-600 text-white shadow-md">
+      <header className="bg-gradient-to-r from-orange-400 to-red-200 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
@@ -66,19 +68,19 @@ export default function CustomDashboardPage() {
                 </Link>
                 <Link
                   href="/profile"
-                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium h-16 text-indigo-100 hover:border-indigo-300 hover:text-white"
+                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium h-16 text-orange-100 hover:border-orange-300 hover:text-white"
                 >
                   Profile
                 </Link>
                 <Link
                   href="/matches"
-                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium h-16 text-indigo-100 hover:border-indigo-300 hover:text-white"
+                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium h-16 text-orange-100 hover:border-orange-300 hover:text-white"
                 >
                   Matches
                 </Link>
                 <Link
                   href="/connections"
-                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium h-16 text-indigo-100 hover:border-indigo-300 hover:text-white"
+                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium h-16 text-orange-100 hover:border-orange-300 hover:text-white"
                 >
                   Connections
                 </Link>
@@ -92,7 +94,7 @@ export default function CustomDashboardPage() {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="bg-indigo-700 p-1 rounded-full text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-600 focus:ring-white px-3 py-1"
+                    className="bg-orange-700 p-1 rounded-full text-orange-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-orange-600 focus:ring-white px-3 py-1"
                   >
                     Sign Out
                   </button>
@@ -103,7 +105,7 @@ export default function CustomDashboardPage() {
             <div className="flex items-center sm:hidden">
               <button
                 type="button"
-                className="inline-flex items-center justify-center p-2 rounded-md text-indigo-200 hover:text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                className="inline-flex items-center justify-center p-2 rounded-md text-orange-200 hover:text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
               >
                 <span className="sr-only">Open main menu</span>
                 <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +140,7 @@ export default function CustomDashboardPage() {
                     Incomplete
                   </span>
                   {' '}
-                  <Link href="/profile/ikigai" className="text-indigo-600 hover:text-indigo-500">
+                  <Link href="/profile/ikigai" className="text-orange-600 hover:text-orange-500">
                     Complete your Ikigai profile
                   </Link>
                 </dd>
@@ -153,7 +155,7 @@ export default function CustomDashboardPage() {
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
               <div className="flex items-center">
-                <div className="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                <div className="flex-shrink-0 bg-orange-500 rounded-md p-3">
                   <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -170,7 +172,7 @@ export default function CustomDashboardPage() {
             </div>
             <div className="bg-gray-50 px-5 py-3">
               <div className="text-sm">
-                <Link href="/profile" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href="/profile" className="font-medium text-orange-600 hover:text-orange-500">
                   View Profile →
                 </Link>
               </div>
@@ -198,7 +200,7 @@ export default function CustomDashboardPage() {
             </div>
             <div className="bg-gray-50 px-5 py-3">
               <div className="text-sm">
-                <Link href="/profile/ikigai" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href="/profile/ikigai" className="font-medium text-orange-600 hover:text-orange-500">
                   Set up your Ikigai →
                 </Link>
               </div>
@@ -226,7 +228,7 @@ export default function CustomDashboardPage() {
             </div>
             <div className="bg-gray-50 px-5 py-3">
               <div className="text-sm">
-                <Link href="/connections" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href="/connections" className="font-medium text-orange-600 hover:text-orange-500">
                   View Connections →
                 </Link>
               </div>
@@ -257,7 +259,7 @@ export default function CustomDashboardPage() {
             </div>
             <div className="bg-gray-50 px-5 py-3">
               <div className="text-sm">
-                <Link href="/profile/social" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href="/profile/social" className="font-medium text-orange-600 hover:text-orange-500">
                   Manage Profiles →
                 </Link>
               </div>
@@ -285,7 +287,7 @@ export default function CustomDashboardPage() {
             </div>
             <div className="bg-gray-50 px-5 py-3">
               <div className="text-sm">
-                <Link href="/profile/working-style" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href="/profile/working-style" className="font-medium text-orange-600 hover:text-orange-500">
                   Set Preferences →
                 </Link>
               </div>
@@ -314,7 +316,7 @@ export default function CustomDashboardPage() {
             </div>
             <div className="bg-gray-50 px-5 py-3">
               <div className="text-sm">
-                <Link href="/settings" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href="/settings" className="font-medium text-orange-600 hover:text-orange-500">
                   Manage Settings →
                 </Link>
               </div>

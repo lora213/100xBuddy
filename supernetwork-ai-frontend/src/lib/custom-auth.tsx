@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { User } from 'lucide-react';
 
 // Define the shape of our user object based on Supabase structure
 interface User {

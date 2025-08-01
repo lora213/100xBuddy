@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 'use client';
 
 import { useSession } from 'next-auth/react';
@@ -33,7 +34,7 @@ export default function Dashboard() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-700">Loading your profile...</p>
         </div>
       </div>
@@ -90,7 +91,7 @@ export default function Dashboard() {
                     </span>
                     <Link 
                       href="/profile/ikigai"
-                      className="text-indigo-600 hover:text-indigo-500"
+                      className="text-orange-600 hover:text-orange-500"
                     >
                       Complete your Ikigai profile
                     </Link>
@@ -112,7 +113,7 @@ export default function Dashboard() {
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+              <div className="flex-shrink-0 bg-orange-500 rounded-md p-3">
                 <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -131,7 +132,7 @@ export default function Dashboard() {
             <div className="text-sm">
               <Link 
                 href="/profile/ikigai"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-orange-600 hover:text-orange-500"
               >
                 {!profile || !profile.ikigai ? 'Set up your Ikigai' : 'View your Ikigai'} <span aria-hidden="true">&rarr;</span>
               </Link>
@@ -162,7 +163,7 @@ export default function Dashboard() {
             <div className="text-sm">
               <Link 
                 href="/matches"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-orange-600 hover:text-orange-500"
               >
                 View matches <span aria-hidden="true">&rarr;</span>
               </Link>
@@ -193,7 +194,7 @@ export default function Dashboard() {
             <div className="text-sm">
               <Link 
                 href="/connections"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="font-medium text-orange-600 hover:text-orange-500"
               >
                 View connections <span aria-hidden="true">&rarr;</span>
               </Link>

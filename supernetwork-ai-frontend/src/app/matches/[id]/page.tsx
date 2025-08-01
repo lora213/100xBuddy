@@ -165,7 +165,7 @@ export default function MatchDetailPage() {
         </div>
         <button
           onClick={() => router.push('/matches')}
-          className="text-indigo-600 hover:text-indigo-800 font-medium"
+          className="text-orange-600 hover:text-orange-800 font-medium"
         >
           ← Back to matches
         </button>
@@ -181,7 +181,7 @@ export default function MatchDetailPage() {
           <p className="text-gray-600 mb-4">This match may no longer be available.</p>
           <button
             onClick={() => router.push('/matches')}
-            className="text-indigo-600 hover:text-indigo-800 font-medium"
+            className="text-orange-600 hover:text-orange-800 font-medium"
           >
             ← Back to matches
           </button>
@@ -194,7 +194,7 @@ export default function MatchDetailPage() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <button
         onClick={() => router.push('/matches')}
-        className="text-indigo-600 hover:text-indigo-800 font-medium mb-6 flex items-center"
+        className="text-orange-600 hover:text-orange-800 font-medium mb-6 flex items-center"
       >
         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -204,14 +204,14 @@ export default function MatchDetailPage() {
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {/* Header with match score */}
-        <div className="bg-indigo-700 text-white p-6">
+        <div className="bg-gradient-to-r from-orange-400 to-red-200 text-white p-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">{match.name}</h1>
             <div className="text-xl font-semibold">
               {match.matchScore}% Match
             </div>
           </div>
-          <p className="mt-1 text-indigo-100">{match.tagline}</p>
+          <p className="mt-1 text-orange-100">{match.tagline}</p>
           
           <div className="mt-4">
             <span className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${
@@ -223,7 +223,7 @@ export default function MatchDetailPage() {
                match.matchType === 'teammate' ? 'Teammate' : 'Client'} Match
             </span>
             {match.location && (
-              <span className="ml-3 text-indigo-100">
+              <span className="ml-3 text-orange-100">
                 <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -232,7 +232,7 @@ export default function MatchDetailPage() {
               </span>
             )}
             {match.availableHours && (
-              <span className="ml-3 text-indigo-100">
+              <span className="ml-3 text-orange-100">
                 <svg className="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -264,7 +264,7 @@ export default function MatchDetailPage() {
                         href={profile.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-gray-600 hover:text-indigo-600"
+                        className="text-gray-600 hover:text-orange-600"
                       >
                         {profile.type === 'github' ? (
                           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -321,9 +321,9 @@ export default function MatchDetailPage() {
               )}
               
               {/* AI Match Explanation */}
-              <div className="mb-6 bg-indigo-50 p-4 rounded-lg">
-                <h3 className="text-md font-medium text-indigo-700 mb-2">Why You Match</h3>
-                <p className="text-indigo-900">{aiExplanation || match.matchReason}</p>
+              <div className="mb-6 bg-orange-50 p-4 rounded-lg">
+                <h3 className="text-md font-medium text-orange-700 mb-2">Why You Match</h3>
+                <p className="text-orange-900">{aiExplanation || match.matchReason}</p>
               </div>
               
               {/* Ikigai */}
@@ -415,7 +415,7 @@ export default function MatchDetailPage() {
             <button
               onClick={handleSendRequest}
               disabled={sendingRequest}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 bg-orange-600 text-white rounded-md font-medium hover:bg-orange-700 disabled:opacity-50"
             >
               {sendingRequest ? 'Sending...' : 'Send Connection Request'}
             </button>
